@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:13 
+    container_name: postgres_db_python_fastapi_crud_db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: python_fastapi_crud_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "user", "-d", "python_fastapi_crud_db"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s      
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend_app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://user:password@db:5432/python_fastapi_crud_db" 
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/app:/app 
+      
+volumes:
+  db_data:
